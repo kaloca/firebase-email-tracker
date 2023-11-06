@@ -3,7 +3,11 @@ import { use, useEffect, useState } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { getToken } from 'next-auth/jwt'
 
-import { copyImageToClipboard, copyToClipboard } from '@/lib/copyHtml'
+import {
+	copyImageToClipboard,
+	copyRenderedImageToClipboard,
+	copyToClipboard,
+} from '@/lib/copyHtml'
 
 import { Editor } from 'primereact/editor'
 
@@ -110,11 +114,7 @@ export default function Home() {
 
 							<button
 								className='bg-gray-200 px-2 py-1 border border-gray-800 rounded hover:bg-gray-300'
-								onClick={() =>
-									copyImageToClipboard(
-										'https://firebase-email-tracker.vercel.app/api/track?id=${emailId}'
-									)
-								}
+								onClick={() => copyRenderedImageToClipboard('pixel')}
 							>
 								Copy Pixel
 							</button>
