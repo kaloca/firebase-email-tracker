@@ -17,6 +17,12 @@ interface EmailOpen {
 	openedAt: admin.firestore.Timestamp
 	userAgent?: string
 	ip?: string
+	id?: string
+}
+
+export interface EmailWithOpens extends Email {
+	opens: EmailOpen[]
+	id: string
 }
 
 export const createUser = async (user: User) => {
@@ -34,4 +40,47 @@ export const logEmailOpen = async (emailId: string, open: EmailOpen) => {
 	const emailRef = db.collection('emails').doc(emailId)
 	const opensCollection = emailRef.collection('opens')
 	await opensCollection.add(open)
+}
+
+export const getEmailsAndOpens = async (
+	lastVisible: any,
+	pageSize: number
+): Promise<EmailWithOpens[]> => {
+	const emailsCollection = db.collection('emails')
+
+	let query = emailsCollection.orderBy('createdAt').limit(pageSize)
+
+	if (lastVisible) {
+		query = query.startAfter(lastVisible)
+	}
+
+	const emailsSnapshot = await query.get()
+	const emails: EmailWithOpens[] = []
+
+	for (const emailDoc of emailsSnapshot.docs) {
+		const opensCollection = emailDoc.ref.collection('opens')
+		const opensSnapshot = await opensCollection.get()
+
+		// Map the 'open' documents into EmailOpen objects
+		const opens = opensSnapshot.docs.map((doc) => {
+			const openData = doc.data()
+			// Convert openedAt to a Date object or a string
+			openData.openedAt = openData.openedAt.toDate()
+
+			return {
+				id: doc.id,
+				...openData,
+				// or if you want a string: openedAt: openData.openedAt.toDate().toISOString(),
+			} as EmailOpen
+		})
+
+		emails.push({
+			id: emailDoc.id, // Include the ID of the email
+			...(emailDoc.data() as Email),
+			createdAt: emailDoc.data().createdAt.toDate(),
+			opens,
+		})
+	}
+
+	return emails
 }

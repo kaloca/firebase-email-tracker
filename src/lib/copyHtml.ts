@@ -10,3 +10,26 @@ export const copyToClipboard = async (elementId: string) => {
 		console.error('Failed to copy: ', err)
 	}
 }
+
+export const copyImageToClipboard = async (imageUrl: string) => {
+	try {
+		// Fetch the image
+		const response = await fetch(imageUrl)
+		// Ensure the request is successful
+		if (!response.ok) throw new Error('Failed to fetch the image.')
+
+		// Get the image as Blob
+		const blob = await response.blob()
+
+		// Use the Clipboard API to copy the image Blob
+		await navigator.clipboard.write([
+			new ClipboardItem({
+				[blob.type]: blob,
+			}),
+		])
+
+		console.log('Image copied to clipboard')
+	} catch (err) {
+		console.error('Failed to copy image: ', err)
+	}
+}

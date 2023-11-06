@@ -3,7 +3,7 @@ import { use, useEffect, useState } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { getToken } from 'next-auth/jwt'
 
-import { copyImageToClipboard, copyToClipboard } from '@/lib/copyHtml'
+import { copyToClipboard } from '@/lib/copyHtml'
 
 import { Editor } from 'primereact/editor'
 
@@ -61,7 +61,7 @@ export default function Home() {
 	}, [message])
 
 	return (
-		<main className='w-screen h-screen bg-teal-800 flex flex-col items-center pt-20'>
+		<main className='w-screen h-screen bg-teal-800 flex flex-col items-center'>
 			<div className='flex flex-col bg-white p-2 h-1/2 text-black justify-between'>
 				<div>
 					<input
@@ -110,11 +110,7 @@ export default function Home() {
 
 							<button
 								className='bg-gray-200 px-2 py-1 border border-gray-800 rounded hover:bg-gray-300'
-								onClick={() =>
-									copyImageToClipboard(
-										'https://firebase-email-tracker.vercel.app/api/track?id=${emailId}'
-									)
-								}
+								onClick={() => copyToClipboard('pixel')}
 							>
 								Copy Pixel
 							</button>
