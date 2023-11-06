@@ -101,19 +101,17 @@ export default function Home() {
 					</div>
 					{showPixel && emailId && message?.to && message?.subject && (
 						<div>
-							<div className='mb-4 inline-flex'>
-								<span className='text-black'>
-									H
-									<img
-										src={`https://firebase-email-tracker.vercel.app/api/track?id=${emailId}`}
-										alt=''
-										width='1'
-										height='1'
-										id='pixel'
-									/>
-									H
-								</span>
-							</div>
+							<p className='mb-4 inline-flex'>
+								<span className='text-black'>H</span>
+								<img
+									src={`https://firebase-email-tracker.vercel.app/api/track?id=${emailId}`}
+									alt=''
+									width='1'
+									height='1'
+									id='pixel'
+								/>
+								<span>H</span>
+							</p>
 
 							{/* <button
 								className='bg-gray-200 px-2 py-1 border border-gray-800 rounded hover:bg-gray-300'
