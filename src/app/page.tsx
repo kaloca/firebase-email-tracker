@@ -1,7 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { getToken } from 'next-auth/jwt'
+
+import { copyToClipboard } from '@/lib/copyHtml'
 
 import { Editor } from 'primereact/editor'
 
@@ -15,6 +17,8 @@ export default function Home() {
 	const { data: session, status } = useSession()
 
 	const [message, setMessage] = useState<Email>()
+	const [showPixel, setShowPixel] = useState<boolean>(false)
+	const [emailId, setEmailId] = useState<string | undefined>()
 
 	const testApi = async () => {
 		const data = await fetch('/api/graph/test')
@@ -24,11 +28,37 @@ export default function Home() {
 		return !['Offline', 'Away'].includes(presence.availability)
 	}
 
-	const sendMail = async () => {
-		await fetch('/api/graph/sendMail', {
-			method: 'POST',
-		})
+	const getEmailId = async () => {
+		try {
+			const response = await fetch('/api/track', {
+				method: 'POST',
+				body: JSON.stringify({
+					to: message?.to,
+					subject: message?.subject,
+				}),
+			})
+
+			const { id } = await response.json()
+
+			setEmailId(id)
+		} catch (e) {
+			console.log(e)
+		}
 	}
+
+	const generatePixel = async () => {
+		try {
+			await getEmailId()
+
+			setShowPixel(true)
+		} catch (e) {
+			console.log(e)
+		}
+	}
+
+	useEffect(() => {
+		setShowPixel(false)
+	}, [message])
 
 	return (
 		<main className='w-screen h-screen bg-teal-800 flex flex-col items-center'>
@@ -53,16 +83,6 @@ export default function Home() {
 					Sign Out
 				</button>
 			</div>
-			<p>{JSON.stringify(session)}</p>
-			<button
-				onClick={async (e) => {
-					e.preventDefault()
-					await testApi()
-				}}
-				className='p-2 my-2 bg-green-400'
-			>
-				Test API
-			</button>
 			<div className='flex flex-col bg-white p-2 h-1/2 text-black justify-between'>
 				<div>
 					<input
@@ -80,26 +100,46 @@ export default function Home() {
 						}
 					/>
 
-					<Editor
+					{/* <Editor
 						value={message?.body}
 						onTextChange={(e) =>
 							setMessage({ ...message, body: e.htmlValue || undefined })
 						}
-					/>
-				</div>
+					/> */}
+					<div className='flex flex-row justify-center pb-5'>
+						<button
+							onClick={async (e) => {
+								if (message?.to && message?.subject) generatePixel()
+							}}
+							className='py-2 px-4 bg-blue-500 hover:bg-blue-400 transition-colors duration-75 text-white font-semibold rounded'
+						>
+							Generate Pixel
+						</button>
+					</div>
+					{showPixel && emailId && message?.to && message?.subject && (
+						<div>
+							<div className='mb-4'>
+								<h1>Pixel:</h1>
+								<img
+									src={`https://firebase-email-tracker.vercel.app/api/track?id=${emailId}`}
+									alt=''
+									width='1'
+									height='1'
+									id='pixel'
+								/>
+							</div>
 
-				<div className='flex flex-row justify-end pb-5 pr-7'>
-					<button
-						onClick={async (e) => {
-							e.preventDefault()
-							await sendMail()
-						}}
-						className='py-2 px-4 bg-blue-500 hover:bg-blue-400 transition-colors duration-75 text-white font-semibold rounded'
-					>
-						Send
-					</button>
+							<button
+								className='bg-gray-200 px-2 py-1 border border-gray-800 rounded hover:bg-gray-300'
+								onClick={() => copyToClipboard('pixel')}
+							>
+								Copy Pixel
+							</button>
+						</div>
+					)}
 				</div>
 			</div>
+			<div></div>
 		</main>
 	)
 }

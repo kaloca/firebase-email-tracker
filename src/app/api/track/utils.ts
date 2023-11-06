@@ -4,12 +4,13 @@ import admin from 'firebase-admin'
 interface User {
 	email: string
 	name?: string
+	ip?: string
 }
 
 interface Email {
 	to: string
 	subject: string
-	sentAt: admin.firestore.Timestamp
+	createdAt: admin.firestore.Timestamp
 }
 
 interface EmailOpen {
@@ -23,7 +24,7 @@ export const createUser = async (user: User) => {
 	await userRef.set(user)
 }
 
-export const logEmailSent = async (email: Email): Promise<string> => {
+export const createEmail = async (email: Email): Promise<string> => {
 	const emailsCollection = db.collection('emails')
 	const docRef = await emailsCollection.add(email)
 	return docRef.id // return the ID
