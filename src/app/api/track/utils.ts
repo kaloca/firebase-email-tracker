@@ -46,13 +46,17 @@ export const logEmailOpen = async (emailId: string, open: EmailOpen) => {
 export const getEmailsAndOpens = async (
 	lastVisible: any,
 	pageSize: number
-): Promise<EmailWithOpens[]> => {
+): Promise<{ emails: EmailWithOpens[]; lastVisible: any }> => {
 	const emailsCollection = db.collection('emails')
 
-	let query = emailsCollection.orderBy('createdAt').limit(pageSize)
+	let query = emailsCollection.orderBy('createdAt', 'desc').limit(pageSize)
 
 	if (lastVisible) {
-		query = query.startAfter(lastVisible)
+		const lastDocSnapshot = await emailsCollection.doc(lastVisible).get()
+		if (lastDocSnapshot.exists) {
+			// Then use that snapshot in startAfter
+			query = query.startAfter(lastDocSnapshot)
+		}
 	}
 
 	const emailsSnapshot = await query.get()
@@ -86,5 +90,11 @@ export const getEmailsAndOpens = async (
 		})
 	}
 
-	return emails
+	const lastVisibleSnapshot =
+		emailsSnapshot.docs[emailsSnapshot.docs.length - 1]
+
+	return {
+		emails,
+		lastVisible: lastVisibleSnapshot ? { id: lastVisibleSnapshot.id } : null, // Just return the ID
+	}
 }

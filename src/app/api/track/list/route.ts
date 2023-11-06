@@ -1,8 +1,13 @@
 import { getEmailsAndOpens } from '../utils'
 
-export async function GET(req: Request) {
+export async function PUT(req: Request) {
 	try {
-		const emails = await getEmailsAndOpens(null, 100)
+		const body = await req.json()
+
+		const emails = await getEmailsAndOpens(
+			body.lastVisible ?? null,
+			body.pageSize
+		)
 
 		return Response.json(emails, {
 			status: 200,
