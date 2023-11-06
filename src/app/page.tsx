@@ -114,7 +114,11 @@ export default function Home() {
 
 							<button
 								className='bg-gray-200 px-2 py-1 border border-gray-800 rounded hover:bg-gray-300'
-								onClick={() => copyRenderedImageToClipboard('pixel')}
+								onClick={() =>
+									copyRenderedImageToClipboard(
+										`https://firebase-email-tracker.vercel.app/api/track?id=${emailId}`
+									)
+								}
 							>
 								Copy Pixel
 							</button>

@@ -34,38 +34,42 @@ export const copyImageToClipboard = async (imageUrl: string) => {
 	}
 }
 
-export const copyRenderedImageToClipboard = async (imageElementId: string) => {
+export const copyRenderedImageToClipboard = async (imageUrl: string) => {
 	try {
-		const imageElement = document.getElementById(
-			imageElementId
-		) as HTMLImageElement
-		if (!imageElement) {
-			throw new Error('Image element not found')
+		const image = new Image()
+		// Set cross-origin to anonymous to request CORS headers
+		image.crossOrigin = 'anonymous'
+		image.src = imageUrl
+
+		image.onload = async () => {
+			// Create an off-screen canvas
+			const canvas = document.createElement('canvas')
+			canvas.width = image.width
+			canvas.height = image.height
+
+			// Draw the image onto the canvas
+			const ctx = canvas.getContext('2d')
+			ctx!.drawImage(image, 0, 0)
+
+			// Convert the canvas to a Blob
+			canvas.toBlob(async (blob) => {
+				if (blob) {
+					// Use the Clipboard API to copy the image Blob
+					await navigator.clipboard.write([
+						new ClipboardItem({
+							[blob.type]: blob,
+						}),
+					])
+					console.log('Rendered image copied to clipboard')
+				} else {
+					throw new Error('Unable to create blob from canvas')
+				}
+			})
 		}
 
-		// Create an off-screen canvas
-		const canvas = document.createElement('canvas')
-		canvas.width = imageElement.naturalWidth
-		canvas.height = imageElement.naturalHeight
-
-		// Draw the image onto the canvas
-		const ctx = canvas.getContext('2d')
-		ctx!.drawImage(imageElement, 0, 0)
-
-		// Convert the canvas to a Blob
-		canvas.toBlob(async (blob) => {
-			if (blob) {
-				// Use the Clipboard API to copy the image Blob
-				await navigator.clipboard.write([
-					new ClipboardItem({
-						[blob.type]: blob,
-					}),
-				])
-				console.log('Rendered image copied to clipboard')
-			} else {
-				throw new Error('Unable to create blob from canvas')
-			}
-		})
+		image.onerror = () => {
+			throw new Error('Image failed to load')
+		}
 	} catch (err) {
 		console.error('Failed to copy rendered image: ', err)
 	}
