@@ -1,5 +1,6 @@
 import db from '@/lib/firebaseConfig'
 import admin from 'firebase-admin'
+import { getBlacklistedIPs } from './blacklist/utils'
 
 interface User {
 	email: string
@@ -55,6 +56,7 @@ export const getEmailsAndOpens = async (
 	}
 
 	const emailsSnapshot = await query.get()
+	const blacklist = await getBlacklistedIPs()
 	const emails: EmailWithOpens[] = []
 
 	for (const emailDoc of emailsSnapshot.docs) {
@@ -62,20 +64,22 @@ export const getEmailsAndOpens = async (
 		const opensSnapshot = await opensCollection.get()
 
 		// Map the 'open' documents into EmailOpen objects
-		const opens = opensSnapshot.docs.map((doc) => {
-			const openData = doc.data()
-			// Convert openedAt to a Date object or a string
-			openData.openedAt = openData.openedAt.toDate()
+		const opens = opensSnapshot.docs
+			.map((doc) => {
+				const openData = doc.data()
+				// Convert openedAt to a Date object or a string
+				openData.openedAt = openData.openedAt.toDate()
 
-			return {
-				id: doc.id,
-				...openData,
-				// or if you want a string: openedAt: openData.openedAt.toDate().toISOString(),
-			} as EmailOpen
-		})
+				return {
+					id: doc.id,
+					...openData,
+					// or if you want a string: openedAt: openData.openedAt.toDate().toISOString(),
+				} as EmailOpen
+			})
+			.filter((open) => open.ip && !blacklist.includes(open.ip))
 
 		emails.push({
-			id: emailDoc.id, // Include the ID of the email
+			id: emailDoc.id,
 			...(emailDoc.data() as Email),
 			createdAt: emailDoc.data().createdAt.toDate(),
 			opens,

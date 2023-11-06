@@ -101,18 +101,21 @@ export default function Home() {
 					</div>
 					{showPixel && emailId && message?.to && message?.subject && (
 						<div>
-							<div className='mb-4'>
-								<h1>Pixel:</h1>
-								<img
-									src={`https://firebase-email-tracker.vercel.app/api/track?id=${emailId}`}
-									alt=''
-									width='1'
-									height='1'
-									id='pixel'
-								/>
+							<div className='mb-4 inline-flex'>
+								<span className='text-black'>
+									H
+									<img
+										src={`https://firebase-email-tracker.vercel.app/api/track?id=${emailId}`}
+										alt=''
+										width='1'
+										height='1'
+										id='pixel'
+									/>
+									H
+								</span>
 							</div>
 
-							<button
+							{/* <button
 								className='bg-gray-200 px-2 py-1 border border-gray-800 rounded hover:bg-gray-300'
 								onClick={() =>
 									copyRenderedImageToClipboard(
@@ -121,7 +124,7 @@ export default function Home() {
 								}
 							>
 								Copy Pixel
-							</button>
+							</button> */}
 						</div>
 					)}
 				</div>

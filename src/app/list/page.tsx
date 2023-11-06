@@ -2,9 +2,11 @@
 import { useEffect, useState } from 'react'
 
 import { EmailWithOpens } from '../api/track/utils'
+import IPManager from './ipManager'
 
 export default function ListEmailsPage() {
 	const [emails, setEmails] = useState<EmailWithOpens[]>()
+	const [blacklistedIPs, setBlacklistedIPs] = useState<string[]>([])
 
 	const fetchEmails = async () => {
 		try {
@@ -20,7 +22,7 @@ export default function ListEmailsPage() {
 
 	useEffect(() => {
 		fetchEmails()
-	}, [])
+	}, [blacklistedIPs])
 
 	return (
 		<div className='w-screen h-screen bg-teal-800 flex flex-col items-center pt-20'>
@@ -89,6 +91,10 @@ export default function ListEmailsPage() {
 					</tbody>
 				</table>
 			</div>
+			<IPManager
+				blacklistedIPs={blacklistedIPs}
+				setBlacklistedIPs={setBlacklistedIPs}
+			/>
 			{/* {emails && (
 				<div className='p-2 bg-white'>
 					{emails.map((email) => (
