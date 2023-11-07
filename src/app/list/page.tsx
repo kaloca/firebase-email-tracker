@@ -1,16 +1,25 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Dropdown } from 'primereact/dropdown'
+import { Dialog } from 'primereact/dialog'
 
-import { EmailWithOpens } from '../api/track/utils'
+import { EmailOpen, EmailWithOpens } from '../api/track/utils'
 import IPManager from './ipManager'
 
 export default function ListEmailsPage() {
-	const pageSize = 10
+	const dialogRef = useRef<HTMLDivElement>(null)
+
+	const [pageSize, setPageSize] = useState(10)
 	const [emails, setEmails] = useState<EmailWithOpens[]>()
 	const [isLoading, setIsLoading] = useState(false)
 	const [lastVisible, setLastVisible] = useState<EmailWithOpens | null>(null)
 	const [blacklistedIPs, setBlacklistedIPs] = useState<string[]>([])
 	const [currentPage, setCurrentPage] = useState(0)
+	const [showDetailsDialog, setShowDetailsDialog] = useState<{
+		opens: EmailOpen[]
+		to: string
+		info: string
+	} | null>()
 	const [pagesSnapshot, setPagesSnapshot] = useState<{ [page: number]: any }>(
 		{}
 	)
@@ -80,10 +89,89 @@ export default function ListEmailsPage() {
 
 	useEffect(() => {
 		fetchEmails()
-	}, [blacklistedIPs])
+	}, [blacklistedIPs, pageSize])
+
+	useEffect(() => {
+		// Function to call on outside click
+		function handleClickOutside(event: any) {
+			if (dialogRef.current && !dialogRef.current.contains(event.target)) {
+				setShowDetailsDialog(null)
+			}
+		}
+
+		// Bind the event listener
+		document.addEventListener('mousedown', handleClickOutside)
+		return () => {
+			// Unbind the event listener on clean up
+			document.removeEventListener('mousedown', handleClickOutside)
+		}
+	}, [dialogRef])
+
 	console.log(currentPage)
 	return (
-		<div className='w-screen h-screen bg-teal-800 flex flex-col items-center pt-20'>
+		<div className='w-full h-full bg-teal-800 flex flex-col items-center pt-20'>
+			{showDetailsDialog && (
+				<div
+					ref={dialogRef}
+					className=' fixed top-48 bg-white px-10 py-6 shadow-lg shadow-gray-300'
+				>
+					<h2 className='text-black mb-2'>
+						Email to{' '}
+						<span className='font-semibold'>{showDetailsDialog.to}</span>,{' '}
+						{showDetailsDialog.info}
+					</h2>
+					<table className='min-w-full divide-y divide-gray-300'>
+						<thead className='bg-gray-50'>
+							<tr>
+								<th
+									scope='col'
+									className='py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6'
+								>
+									IP Address
+								</th>
+								<th
+									scope='col'
+									className='px-3 py-3.5 text-left text-sm font-semibold text-gray-900'
+								>
+									Date Opened
+								</th>
+							</tr>
+						</thead>
+						<tbody className='divide-y divide-gray-200 bg-white'>
+							{showDetailsDialog.opens
+								.sort((a, b) => {
+									let dateA = +new Date(a.openedAt as any)
+									let dateB = +new Date(b.openedAt as any)
+
+									return dateA - dateB
+								})
+								.map((open) => (
+									<tr key={open.id}>
+										<td className='whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6'>
+											{open.ip}
+										</td>
+										<td className='whitespace-nowrap px-3 py-4 text-sm text-gray-500'>
+											{new Date(open.openedAt as any)
+												.toLocaleString('en-US', {
+													weekday: 'short',
+													year: 'numeric',
+													month: 'short',
+													day: 'numeric',
+													hour: '2-digit',
+													minute: '2-digit',
+													second: '2-digit',
+													timeZoneName: 'short',
+												})
+												.split(', ')
+												.join(' ')
+												.replace(/ [A-Z]+$/, '')}
+										</td>
+									</tr>
+								))}
+						</tbody>
+					</table>
+				</div>
+			)}
 			<div className='w-1/2 bg-white'>
 				<table className='min-w-full divide-y divide-gray-300'>
 					<thead className='bg-gray-50'>
@@ -114,66 +202,93 @@ export default function ListEmailsPage() {
 							</th>
 						</tr>
 					</thead>
-					{isLoading ? (
-						<tbody>
-							<tr>
-								<td>Loading</td>
-							</tr>
-						</tbody>
-					) : (
-						<tbody className='divide-y divide-gray-200 bg-white'>
-							{emails &&
-								emails.map((email) => (
-									<tr key={email.id}>
-										<td className='whitespace-nowrap px-3 py-4 text-sm text-gray-500'>
-											{new Date(email.createdAt as any).toDateString()}
-										</td>
-										<td className='whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6'>
-											{email.to}
-										</td>
-										<td className='whitespace-nowrap px-3 py-4 text-sm text-gray-500'>
-											{email.subject}
-										</td>
 
-										<td className='whitespace-nowrap px-3 py-4 text-sm text-gray-500'>
-											{email.opens[0] ? (
-												<>
-													{email.opens.map((open) => (
-														<span key={open.id}>{open.ip}, </span>
+					<tbody className='divide-y divide-gray-200 bg-white'>
+						{emails &&
+							emails.map((email) => (
+								<tr key={email.id}>
+									<td className='whitespace-nowrap px-3 py-4 text-sm text-gray-500'>
+										{new Date(email.createdAt as any).toDateString()}
+									</td>
+									<td className='whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6'>
+										{email.to}
+									</td>
+									<td className='whitespace-nowrap px-3 py-4 text-sm text-gray-500'>
+										{email.subject}
+									</td>
+
+									<td className='whitespace-nowrap px-3 py-4 text-sm text-gray-500'>
+										{email.opens[0] ? (
+											<div className='inline-flex'>
+												<div className='w-52 overflow-hidden'>
+													{Array.from(
+														new Set(email.opens.map((open) => open.ip))
+													).map((ip, index) => (
+														<span key={index}>{ip}, </span>
 													))}
-													<span className='underline text-blue-600 cursor-pointer ml-4'>
-														Details
-													</span>
-												</>
-											) : (
-												<span>Not opened</span>
-											)}
-										</td>
-									</tr>
-								))}
-						</tbody>
-					)}
+												</div>
+												<span
+													onClick={() =>
+														setShowDetailsDialog({
+															opens: email.opens,
+															to: email.to,
+															info: email.subject,
+														})
+													}
+													className='underline text-blue-600 cursor-pointer ml-4'
+												>
+													Details
+												</span>
+											</div>
+										) : (
+											<span>Not opened</span>
+										)}
+									</td>
+								</tr>
+							))}
+					</tbody>
 				</table>
-				{!(currentPage == 0 && (emails?.length || pageSize + 1) < pageSize) && (
-					<>
-						<button
-							onClick={() => fetchEmails('prev')}
-							className='bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l'
-							disabled={isLoading || currentPage == 0}
+				<div className='w-full inline-flex justify-between py-1 px-4'>
+					<div className='inline-flex'>
+						{!(
+							currentPage == 0 && (emails?.length || pageSize + 1) < pageSize
+						) && (
+							<>
+								<button
+									onClick={() => fetchEmails('prev')}
+									className='bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l'
+									disabled={isLoading || currentPage == 0}
+								>
+									Previous
+								</button>
+								<button
+									onClick={() => fetchEmails('next')}
+									className='bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r'
+									disabled={
+										isLoading || (emails?.length || pageSize + 1) < pageSize
+									}
+								>
+									Next
+								</button>
+							</>
+						)}
+					</div>
+
+					<div className='bg-white w-24 inline-flex'>
+						<select
+							id='location'
+							name='Show'
+							className='mt-1 text-black block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md'
+							value={pageSize}
+							onChange={(e) => setPageSize(parseInt(e.target.value))}
 						>
-							Previous
-						</button>
-						<button
-							onClick={() => fetchEmails('next')}
-							className='bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r'
-							disabled={
-								isLoading || (emails?.length || pageSize + 1) < pageSize
-							}
-						>
-							Next
-						</button>
-					</>
-				)}
+							<option>5</option>
+							<option>10</option>
+							<option>30</option>
+							<option>50</option>
+						</select>
+					</div>
+				</div>
 			</div>
 			<IPManager
 				blacklistedIPs={blacklistedIPs}

@@ -14,7 +14,7 @@ interface Email {
 	createdAt: admin.firestore.Timestamp
 }
 
-interface EmailOpen {
+export interface EmailOpen {
 	openedAt: admin.firestore.Timestamp
 	userAgent?: string
 	ip?: string
@@ -80,7 +80,11 @@ export const getEmailsAndOpens = async (
 					// or if you want a string: openedAt: openData.openedAt.toDate().toISOString(),
 				} as EmailOpen
 			})
-			.filter((open) => open.ip && !blacklist.includes(open.ip))
+			.filter(
+				(open) =>
+					open.ip &&
+					!blacklist.some((blacklisted) => open.ip!.startsWith(blacklisted))
+			)
 
 		emails.push({
 			id: emailDoc.id,
