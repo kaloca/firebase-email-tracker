@@ -113,14 +113,14 @@ export default function ListEmailsPage() {
 			{showDetailsDialog && (
 				<div
 					ref={dialogRef}
-					className=' fixed top-48 bg-white px-10 py-6 shadow-lg shadow-gray-300'
+					className=' fixed top-48 bg-white px-10 py-6 shadow-lg max-h-0.5 min-h-[400px] shadow-gray-300 overflow-scroll'
 				>
 					<h2 className='text-black mb-2'>
 						Email to{' '}
 						<span className='font-semibold'>{showDetailsDialog.to}</span>,{' '}
 						{showDetailsDialog.info}
 					</h2>
-					<table className='min-w-full divide-y divide-gray-300'>
+					<table className='min-w-full divide-y divide-gray-300 overflow-scroll'>
 						<thead className='bg-gray-50'>
 							<tr>
 								<th
